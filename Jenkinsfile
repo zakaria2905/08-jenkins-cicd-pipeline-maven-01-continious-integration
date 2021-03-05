@@ -14,6 +14,7 @@ pipeline{
         NEXUS_URL = "host.docker.internal:8081"
         NEXUS_REPOSITORY = "mylocalrepo-snapshots"
         NEXUS_CREDENTIAL_ID = "nexus-user-credentials"
+        MOUNTPATH = "//C/DevOps-Workspace/Jenkins CI-CD/08-jenkins-cicd-pipeline-maven-01-continious-integration/src/pt"
     }
     
     stages{
@@ -96,6 +97,40 @@ pipeline{
                 }
             }
         }
+        // Start the Staging Server (Tomcat)
+        stage ('Start the application under test ') {
+	        
+	          steps {
+	              sh "docker run --name staging_server -p 9090:8080  -d tomcat:9.0"
+	              sh "docker cp $WORKSPACE/target/greetings-0.1-SNAPSHOT.war staging_server:/usr/local/tomcat/webapps/hello.war"
+               }
+        }
+        // Deploy the app on the Staiging Server
+        stage('Performance Testing'){
+	   	   
+	   	    steps {
+          
+               sh "docker run -d --link staging_server:staging_server  -v ${MOUNTPATH}://jmeter   egaillardon/jmeter -n -t Hello_World_Test_Plan.jmx -l //jmeter/test_report.jtl"
+      
+         	  }
+	    }
+
+        // De performance tests on the app
+        stage ('Publish the performance reports') {
+	        
+	          steps {
+	            perfReport sourceDataFiles: "$WORKSPACE/src/pt/test_report.jtl"
+	          }
+	    }
+
+        // Promote the app on Nexus from the snapshot to release
+        stage ('Clean Up : Stop the application under test') {
+	        
+	          steps {
+	                sh "docker stop   myapp_under_test && docker rm  staging_server "
+                    echo " STOPPED The Tomcat app Under test"
+               }
+	    }
     }
    
 }
