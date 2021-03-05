@@ -6,7 +6,7 @@
 	<groupId>be.businesstraining</groupId>
 	<artifactId>greetings</artifactId>
 	<packaging>war</packaging>
-	<version>0.0.1</version>
+	<version>0.1-SNAPSHOT</version>
 	<name>Hello Maven Webapp</name>
 	<url>http://maven.apache.org</url>
 
